@@ -49,7 +49,7 @@ class LNTextEdit(QFrame):
                        self.config_theme.get('number_bar', 'font_color')))
 
             font_name = self.config_theme.get('number_bar', 'font_name')
-            font_size = int(self.config_theme.get('number_bar', 'font_size'))
+            font_size = self.config_theme.getint('number_bar', 'font_size')
             font = QtGui.QFont(font_name, font_size, QtGui.QFont.Light)
             self.setFont(font)
             return
@@ -212,15 +212,15 @@ class LNTextEdit(QFrame):
             self._left_selected_bracket = QTextEdit.ExtraSelection()
             self._right_selected_bracket = QTextEdit.ExtraSelection()
 
-            self._min_marker_len = int(self.config_main.get('editor',
-                                                            'min_marker_len'))
+            self._min_marker_len = self.config_main.getint('editor',
+                                                           'min_marker_len')
             return
 
         def _setup_ui(self):
             '''Read configuration and apply rules.'''
 
             font_name = self.config_theme.get('editor', 'font_name')
-            font_size = int(self.config_theme.get('editor', 'font_size'))
+            font_size = self.config_theme.getint('editor', 'font_size')
             font = QtGui.QFont(font_name, font_size, QtGui.QFont.Light)
             self.setFont(font)
 
@@ -245,7 +245,7 @@ class LNTextEdit(QFrame):
             cursor = self.cursorForPosition(event.pos())
             cursor.select(QtGui.QTextCursor.WordUnderCursor)
             name = cursor.selectedText()
-            if bool(self.config_main.get('editor', 'all_numbers_in_hex')):
+            if self.config_main.getboolean('editor', 'all_numbers_in_hex'):
                 print 'HRDEV: {}'.format(self.tools.to_number(name))
             else:
                 print 'HRDEV: {}'.format(self.tools.to_hex(name))
@@ -506,7 +506,7 @@ class LNTextEdit(QFrame):
         def _highlight_indents(self, event):
             '''Highlight indents.'''
 
-            if not self.config_main.get('editor', 'show_indent_guides'):
+            if not self.config_main.getboolean('editor', 'show_indent_guides'):
                 return
 
             # Get doc and viewport
@@ -514,7 +514,7 @@ class LNTextEdit(QFrame):
             viewport = self.viewport()
 
             # Multiplication factor and indent width
-            indent_width = int(self.config_theme.get('editor', 'indent_width'))
+            indent_width = self.config_theme.getint('editor', 'indent_width')
 
             # Init painter
             painter = QtGui.QPainter()

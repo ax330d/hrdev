@@ -90,7 +90,7 @@ class Plugin(object):
             self.tools.save_file(complete_path, src)
         self.tools.set_file_path(complete_path)
 
-        max_title = int(self.config_main.get('etc', 'max_title'))
+        max_title = self.config_main.getint('etc', 'max_title')
         self.gui = include.gui.Canvas(self.config_main,
                                       self.config_theme,
                                       self.tools,

@@ -32,9 +32,9 @@ class Parser(object):
 
         self._replacer_literal = None
 
-        self._tab_width = int(self.config_main.get('editor', 'tab_width'))
+        self._tab_width = self.config_main.getint('editor', 'tab_width')
         self._padding = "\t"
-        if bool(self.config_main.get('editor', 'use_spaces')):
+        if self.config_main.getboolean('editor', 'use_spaces'):
             self._padding = ' ' * self._tab_width
         return
 
@@ -44,7 +44,7 @@ class Parser(object):
         index = clang.cindex.Index.create()
         translation_unit = index.parse(file_name, ['-x', 'c++'])
 
-        if bool(self.config_main.get('etc', 'verbose')):
+        if self.config_main.getboolean('etc', 'verbose'):
             diagnostics = list(translation_unit.diagnostics)
             if len(diagnostics) > 0:
                 print 'HRDEV: Found some Clang parse errors...'
@@ -72,7 +72,7 @@ class Parser(object):
         elif token.kind == clang.cindex.TokenKind.LITERAL:
             self._replacer_literal = token.spelling
             # Replace integers with hex format
-            if self.config_main.get('editor', 'all_numbers_in_hex'):
+            if self.config_main.getboolean('editor', 'all_numbers_in_hex'):
                 self._replacer_literal = self.tools.to_hex(token.spelling)
             if token.spelling not in self._token_kinds.literal:
                 self._token_kinds.literal.append(self._replacer_literal)

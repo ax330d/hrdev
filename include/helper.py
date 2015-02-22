@@ -60,7 +60,7 @@ class Tools(object):
             file_name = self._last_file_name
         with open(file_name, 'w') as fout:
             fout.write(data)
-        if bool(self._plugin.config_main.get('etc', 'verbose')):
+        if self._plugin.config_main.getboolean('etc', 'verbose'):
             print 'HRDEV: Saved data to {}'.format(file_name)
         return
 
