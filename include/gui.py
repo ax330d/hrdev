@@ -242,6 +242,7 @@ class LNTextEdit(QFrame):
 
         def mouseDoubleClickEvent(self, event):
             '''TODO: Handle the double mouse click event.'''
+
             cursor = self.cursorForPosition(event.pos())
             cursor.select(QtGui.QTextCursor.WordUnderCursor)
             name = cursor.selectedText()
@@ -249,6 +250,7 @@ class LNTextEdit(QFrame):
                 print 'HRDEV: {}'.format(self.tools.to_number(name))
             else:
                 print 'HRDEV: {}'.format(self.tools.to_hex(name))
+            # self._toggle_casts()
             return
 
         def _on_cursor_position_changed(self):
@@ -467,13 +469,14 @@ class LNTextEdit(QFrame):
         def _toggle_casts(self):
             '''TODO: feature to toggle casting.'''
 
+            print 'toggle 0'
             if self._casts_marked:
                 for selection in self._casts_selections:
                     selection.cursor.clearSelection()
                 self._casts_marked = False
                 self._casts_selections = None
                 return
-
+            print 'toggle 1'
             search_flag = QtGui.QTextDocument.FindFlags(0)
             search_flag |= QtGui.QTextDocument.FindWholeWords
             search_flag |= QtGui.QTextDocument.FindCaseSensitively
@@ -484,6 +487,8 @@ class LNTextEdit(QFrame):
 
             cursor = self.document().find(QtCore.QRegExp(r'\(\w+\s\*\)'))
             cursor.select(QtGui.QTextCursor.WordUnderCursor)
+            print cursor.block().text()
+
             cursor.movePosition(QtGui.QTextCursor.Start)
 
             selection.format.setBackground(QtGui.QColor(marker_color))
@@ -498,6 +503,7 @@ class LNTextEdit(QFrame):
                 selection = QTextEdit.ExtraSelection()
                 selection.format.setBackground(QtGui.QColor(marker_color))
                 selection.cursor = cursor
+                print cursor.block().text()
                 self._casts_selections.append(selection)
             self.setExtraSelections(self._casts_selections)
             self._casts_marked = True
@@ -690,6 +696,7 @@ class EditorForm(object):
         Form.setWindowTitle(QtGui.QApplication.translate("Form", "Form", None, QtGui.QApplication.UnicodeUTF8))
 
 
+# https://www.binpress.com/tutorial/building-a-text-editor-with-pyqt-part-3/147
 class Find(QtGui.QDialog):
     '''Implements find-replace functionality.'''
     def __init__(self, parent=None):

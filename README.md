@@ -5,7 +5,7 @@ Hex-Rays Decompiler Enhanced View (HRDEV)
 
 This is a simple IDA Pro Python plugin to make Hex-Rays Decompiler output bit 
 more attractive. HRDEV plugin retrieves standard decompiler output, parses it 
-with Python Clang bindings, does some magic, and puts back. 
+with Python Clang bindings, does some magic, and compiles back. 
 
 
 ### How it works

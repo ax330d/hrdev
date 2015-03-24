@@ -29,6 +29,8 @@ class Parser(object):
         self._token_kinds.identifier = []
         self._token_kinds.literal = []
         self._token_kinds.comment = []
+        self._token_kinds.imported_functions = []
+        self._token_kinds.banned_functions = []
 
         self._replacer_literal = None
 
@@ -66,14 +68,24 @@ class Parser(object):
                 self._token_kinds.kkeyword.append(token.spelling)
 
         elif token.kind == clang.cindex.TokenKind.IDENTIFIER:
-            if token.spelling not in self._token_kinds.identifier:
+
+            if self.config_main.getboolean('editor', 'highlight_imports') \
+               and token.spelling in self.plugin.imports:
+                self._token_kinds.imported_functions.append(token.spelling)
+
+            elif self.config_main.getboolean('editor', 'highlight_banned') \
+               and token.spelling in self.plugin.banned_functions:
+                self._token_kinds.banned_functions.append(token.spelling)
+
+            elif token.spelling not in self._token_kinds.identifier:
                 self._token_kinds.identifier.append(token.spelling)
 
         elif token.kind == clang.cindex.TokenKind.LITERAL:
             self._replacer_literal = token.spelling
             # Replace integers with hex format
             if self.config_main.getboolean('editor', 'all_numbers_in_hex'):
-                self._replacer_literal = self.tools.to_hex(token.spelling)
+                if self.tools.is_number(token.spelling):
+                    self._replacer_literal = self.tools.to_hex(token.spelling)
             if token.spelling not in self._token_kinds.literal:
                 self._token_kinds.literal.append(self._replacer_literal)
 
@@ -146,12 +158,31 @@ class Highlighter(QtGui.QSyntaxHighlighter):
 
     def _create_rules(self):
         '''Create highlighting rules.'''
+
         # Identifiers
         identifier_format = QtGui.QTextCharFormat()
         foreground = QtGui.QColor(self.config_theme.get('tokens_highlight',
                                                         'identifier_color'))
         identifier_format.setForeground(foreground)
         for word in self.keywords.identifier:
+            rule = QtCore.QRegExp('\\b{}\\b'.format(word))
+            self._highlighting_rules.append((rule, identifier_format))
+
+        # Special Identifier case for imported functions
+        identifier_format = QtGui.QTextCharFormat()
+        foreground = QtGui.QColor(self.config_theme.get('tokens_highlight',
+                                                        'import_color'))
+        identifier_format.setForeground(foreground)
+        for word in self.keywords.imported_functions:
+            rule = QtCore.QRegExp('\\b{}\\b'.format(word))
+            self._highlighting_rules.append((rule, identifier_format))
+
+        # Special Identifier case for banned functions
+        identifier_format = QtGui.QTextCharFormat()
+        foreground = QtGui.QColor(self.config_theme.get('tokens_highlight',
+                                                        'banned_color'))
+        identifier_format.setForeground(foreground)
+        for word in self.keywords.banned_functions:
             rule = QtCore.QRegExp('\\b{}\\b'.format(word))
             self._highlighting_rules.append((rule, identifier_format))
 

@@ -28,7 +28,7 @@ idaapi.require('include.helper')
 
 
 __author__ = 'Arthur Gerkis'
-__version__ = '0.0.1 (beta)'
+__version__ = '0.0.2 (beta)'
 
 
 class Plugin(object):
@@ -43,9 +43,54 @@ class Plugin(object):
         self._bin_md5 = idc.GetInputMD5()
         self._bin_name = re.sub(r'\.[^.]*$', '', idc.GetInputFile())
 
+        self.imports = self._get_imported_names()
+        self.tmp_items = []
+
         self._read_config(real_dir)
+        self.banned_functions = \
+            self.config_main.get('etc', 'banned_functions').split(',')
         self.gui = None
         self.parser = None
+
+    def _imports_names_cb(self, eaddr, name, ordinal):
+        '''Callback for enumeration.'''
+        self.tmp_items.append('' if not name else name)
+        # True -> Continue enumeration
+        return True
+
+    def _build_imports(self):
+        '''Build imports table. (Was taken from examples.)'''
+
+        tree = {}
+        nimps = idaapi.get_import_module_qty()
+
+        for i in xrange(0, nimps):
+            name = idaapi.get_import_module_name(i)
+            if not name:
+                continue
+            # Create a list for imported names
+            self.tmp_items = []
+
+            # Enum imported entries in this module
+            idaapi.enum_import_names(i, self._imports_names_cb)
+
+            if name not in tree:
+                tree[name] = []
+            tree[name].extend(self.tmp_items)
+
+        return tree
+
+    def _get_imported_names(self):
+        '''Create and return a list of imported function names.'''
+
+        tmp = []
+        for _, imp_entries in self._build_imports().items():
+            for imp_name in imp_entries:
+                tmp_name = idc.Demangle(imp_name, idc.GetLongPrm(idc.INF_SHORT_DN))
+                if tmp_name:
+                    imp_name = tmp_name
+                tmp.append(imp_name)
+        return tmp
 
     def _read_config(self, real_dir):
         '''Read config and initialise variables.'''

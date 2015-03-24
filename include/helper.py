@@ -7,6 +7,7 @@ QPlainTextEdit with some basic editor features.
 '''
 
 import re
+import struct
 
 import idc
 
@@ -96,6 +97,13 @@ class Tools(object):
         '''Convert anything to hex.'''
 
         number = number.replace('u', '')
+
+        if number.find('.') != -1:
+            if idc.__EA64__:
+                return hex(struct.unpack('<Q', struct.pack('<d', float(number)))[0])
+            else:
+                return hex(struct.unpack('<I', struct.pack('<f', float(number)))[0])
+
         if number[:2] == '0x':
             return number
         try:
@@ -121,3 +129,13 @@ class Tools(object):
         if matches:
             return matches.group(1).count(' ')
         return 0
+
+    @classmethod
+    def is_number(cls, literal):
+        if literal[:2] in ['0i', '0l', '0u']:
+            return False
+        if literal[:1] == '"':
+            return False
+        if literal.find('.') != -1:
+            return True
+        return True
