@@ -41,7 +41,7 @@ name to folder "data/themes" and edit your file. The name of the file is the
 name of the theme.
 
 For various editor options please take a look at "data/config.ini" and
-configuration files in "data/themes/*.ini". Files contain comments, so it should
+configuration files in "data/themes/\*.ini". Files contain comments, so it should
 not be difficult to understand how to configure editor.
 
 You can toggle line highlight on-off by clicking twice on line number bar.
@@ -55,10 +55,10 @@ tabulation width setting, otherwise you get ugly indentation.
 Plugin may print that there were some Clang parsing errors, but normally that is
 not of a big concern, usually you can ignore them.
 
-Plugin saves all decompiled files to the "hrdev_cache/MODULE_NAME/*" temporary
+Plugin saves all decompiled files to the "hrdev_cache/MODULE_NAME/\*" temporary
 folder. It is done so you can save changes made to file. Next time when Alt+,
 is pressed, plugin will lookup for file in cache. If you want to discard changes
-made, simply delete file in "hrdev_cache/MODULE_NAME/*" folder.
+made, simply delete file in "hrdev_cache/MODULE_NAME/\*" folder.
 
 This is still beta-release, so I am pretty sure you will find some bugs. Don't
 hesitate to report them.
