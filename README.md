@@ -25,7 +25,7 @@ Clang binding is required to parse decompiler output and produce plugin output.
 
 ### Installing
 
-First install Clan Python binding, then just paste plugin into "plugins/" IDA
+First install Clang Python binding, then just paste plugin into "plugins/" IDA
 folder and it will be available on startup.
 
 ### Options
