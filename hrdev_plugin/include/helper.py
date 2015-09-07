@@ -2,9 +2,7 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=F0401
 
-'''This file contains LNTextEdit class which represents overloaded
-QPlainTextEdit with some basic editor features.
-'''
+'''This file contains class implementing various utilities.'''
 
 import re
 import struct
@@ -35,6 +33,8 @@ class Tools(object):
         tmp = idc.Demangle(name, idc.GetLongPrm(idc.INF_SHORT_DN))
         if tmp:
             name = tmp
+        if not name:
+            return name
         matches = re.match(r'^(.*?)\(.*?\)', name)
         if matches:
             name = matches.group(1)

@@ -14,29 +14,26 @@ import re
 import os
 import ConfigParser
 
-from PySide import QtGui
+from PySide import QtCore, QtGui
 import idaapi
 import idc
+import tempfile
 
-import include.syntax
-import include.gui
-import include.helper
+import hrdev_plugin.include.syntax
+import hrdev_plugin.include.gui
+import hrdev_plugin.include.helper
 
-idaapi.require('include.syntax')
-idaapi.require('include.gui')
-idaapi.require('include.helper')
-
-
-__author__ = 'Arthur Gerkis'
-__version__ = '0.0.2 (beta)'
+idaapi.require('hrdev_plugin.include.syntax')
+idaapi.require('hrdev_plugin.include.gui')
+idaapi.require('hrdev_plugin.include.helper')
 
 
 class Plugin(object):
     '''Implements the main plugin class, entry point.'''
 
-    def __init__(self, real_dir):
+    def __init__(self):
         super(Plugin, self).__init__()
-        self.tools = include.helper.Tools(self)
+        self.tools = hrdev_plugin.include.helper.Tools(self)
         self.config_main = ConfigParser.ConfigParser()
         self.config_theme = ConfigParser.ConfigParser()
 
@@ -45,6 +42,9 @@ class Plugin(object):
 
         self.imports = self._get_imported_names()
         self.tmp_items = []
+        real_dir = os.path.realpath(__file__).split('\\')
+        real_dir.pop()
+        real_dir = os.path.sep.join(real_dir)
 
         self._read_config(real_dir)
         self.banned_functions = \
@@ -99,16 +99,14 @@ class Plugin(object):
         dir_chunks.pop()
 
         self.current_dir = os.path.sep.join(dir_chunks)
-        config_path = os.path.sep.join([self.current_dir,
+        config_path = os.path.sep.join([self.current_dir, 'hrdev_plugin',
                                         'data', 'config.ini'])
-
         self.config_main.read(config_path)
         theme_name = str(self.config_main.get('editor', 'highlight_theme'))
 
-        theme_config_path = os.path.sep.join([self.current_dir,
+        theme_config_path = os.path.sep.join([self.current_dir, 'hrdev_plugin',
                                               'data', 'themes',
                                               '{}.ini'.format(theme_name)])
-
         self.config_theme.read(theme_config_path)
         return
 
@@ -123,40 +121,43 @@ class Plugin(object):
         demangled_name = self.tools.demangle_name(function_name)
         file_name = '{}.cpp'.format(self.tools.to_file_name(demangled_name))
 
-        cache_path = os.path.sep.join([self.current_dir,
-                                       'data', 'cache',
+        cache_path = os.path.sep.join([tempfile.gettempdir(),
+                                       'hrdev_cache',
                                        self._bin_name])
+
+        # Create require directories if they dont exist
+        tmp_dir_path = os.path.sep.join([tempfile.gettempdir(), 'hrdev_cache'])
+        if not os.path.isdir(tmp_dir_path):
+            os.mkdir(tmp_dir_path)
+
         if not os.path.isdir(cache_path):
             os.mkdir(cache_path)
 
         complete_path = os.path.sep.join([cache_path, file_name])
+        idaapi.msg("HRDEV cache path: {}\n".format(complete_path))
+
+        src = idaapi.decompile(idaapi.get_screen_ea())
+
+        lvars = {}
+        for v in src.lvars:
+            _type = idaapi.print_tinfo('', 0, 0, idaapi.PRTYPE_1LINE, v.tif, '', '')
+            lvars[str(v.name)] = "{} {} {}".\
+                format(_type, str(v.name), str(v.cmt))
+
+        # Check if file is already in cache
         if not os.path.isfile(complete_path):
-            src = str(idaapi.decompile(idaapi.get_screen_ea()))
-            self.tools.save_file(complete_path, src)
+            self.tools.save_file(complete_path, str(src))
+
         self.tools.set_file_path(complete_path)
 
         max_title = self.config_main.getint('etc', 'max_title')
-        self.gui = include.gui.Canvas(self.config_main,
-                                      self.config_theme,
-                                      self.tools,
-                                      demangled_name[:max_title])
+        self.gui = hrdev_plugin.include.gui.Canvas(self.config_main,
+                                                   self.config_theme,
+                                                   self.tools,
+                                                   lvars,
+                                                   demangled_name[:max_title])
         self.gui.Show('HRDEV')
 
-        self.parser = include.syntax.Parser(self)
+        self.parser = hrdev_plugin.include.syntax.Parser(self)
         self.parser.run(complete_path)
         return
-
-
-def main(real_dir):
-    '''Simple wrapper.'''
-    try:
-        Plugin(real_dir).run()
-    except Exception, error:
-        print error
-    return
-
-if __name__ == '__main__':
-    PLUGIN_PATH = os.path.realpath(__file__)
-    idaapi.CompileLine('static __run_main()'
-                       '{ RunPythonStatement("main(PLUGIN_PATH)"); }')
-    idc.AddHotkey('Alt-,', '__run_main')

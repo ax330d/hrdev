@@ -8,6 +8,7 @@
 
 
 import re
+
 from PySide import QtCore, QtGui
 from PySide.QtCore import QRect
 from PySide.QtCore import Qt
@@ -20,11 +21,11 @@ from PySide.QtGui import QWidget
 from PySide.QtGui import QTextEdit
 
 import idaapi
-import include.syntax
-import include.helper
+import hrdev_plugin.include.syntax
+import hrdev_plugin.include.helper
 
-idaapi.require('include.syntax')
-idaapi.require('include.helper')
+idaapi.require('hrdev_plugin.include.syntax')
+idaapi.require('hrdev_plugin.include.helper')
 
 
 class LNTextEdit(QFrame):
@@ -184,6 +185,7 @@ class LNTextEdit(QFrame):
             self.config_main = self.parent.config_main
             self.config_theme = self.parent.config_theme
             self.tools = self.parent.tools
+            self.lvars = self.parent.lvars
 
             self._loaded = False
 
@@ -198,7 +200,7 @@ class LNTextEdit(QFrame):
             self.cursorPositionChanged.connect(
                 self._on_cursor_position_changed)
 
-            self._bracket_info = include.helper.AttributeDict()
+            self._bracket_info = hrdev_plugin.include.helper.AttributeDict()
             self._bracket_info.saved_bracket = None
             self._bracket_info.depth = 0
             self._bracket_info.seeking_nl = False
@@ -211,6 +213,17 @@ class LNTextEdit(QFrame):
 
             self._left_selected_bracket = QTextEdit.ExtraSelection()
             self._right_selected_bracket = QTextEdit.ExtraSelection()
+
+            toolTipWidget = QtGui.QLabel()
+            toolTipWidget.setStyleSheet("QLabel { background-color : #ffffcc; color : #222; padding: 5px; }")
+            toolTipWidget.setFrameShape(QtGui.QFrame.StyledPanel)
+            toolTipWidget.setWindowFlags(QtCore.Qt.ToolTip)
+            toolTipWidget.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents)
+            toolTipWidget.hide()
+            self._toolTipWidget = toolTipWidget
+
+            self._timer = QtCore.QBasicTimer()
+            self._timer.start(2000, self)
 
             self._min_marker_len = self.config_main.getint('editor',
                                                            'min_marker_len')
@@ -239,6 +252,26 @@ class LNTextEdit(QFrame):
 
             QPlainTextEdit.paintEvent(self, event)
             return
+
+        def timerEvent(self, x):
+            self._toolTipWidget.hide()
+            return
+
+        def event(self, event):
+            if event.type() == QtCore.QEvent.ToolTip:
+                cursor = self.cursorForPosition(event.pos())
+                cursor.select(QtGui.QTextCursor.WordUnderCursor)
+                name = cursor.selectedText()
+                if name and name in self.lvars:
+                    text = self.lvars[name]
+                    self._toolTipWidget.setText(text)
+                    self._toolTipWidget.move(event.globalPos() + QtCore.QPoint(7, 7))
+                    self._toolTipWidget.adjustSize()
+                    self._toolTipWidget.show()
+                return True
+            elif event.type() == QtCore.QEvent.Leave:
+                self._toolTipWidget.hide()
+            return super(QPlainTextEdit, self).event(event)
 
         def mouseDoubleClickEvent(self, event):
             '''TODO: Handle the double mouse click event.'''
@@ -602,6 +635,7 @@ class LNTextEdit(QFrame):
         self.config_main = self.plugin.config_main
         self.config_theme = self.plugin.config_theme
         self.tools = self.plugin.tools
+        self.lvars = self.plugin.lvars
 
         self.setFrameStyle(QFrame.StyledPanel | QFrame.Plain)
 
@@ -664,12 +698,12 @@ class LNTextEdit(QFrame):
 class EditorForm(object):
     '''This ugly class is mostly auto-generated, so I dont touch it.'''
 
-    def __init__(self, config_main, config_theme, tools, *args):
+    def __init__(self, config_main, config_theme, tools, lvars, *args):
         super(EditorForm, self).__init__()
         self.config_main = config_main
         self.config_theme = config_theme
         self.tools = tools
-        return
+        self.lvars = lvars
 
     def setupUi(self, Form):
         Form.setObjectName("Form")
@@ -811,11 +845,12 @@ class Find(QtGui.QDialog):
 
 class Canvas(idaapi.PluginForm):
     '''Implements main GUI class.'''
-    def __init__(self, config_main, config_theme, tools, window_name):
+    def __init__(self, config_main, config_theme, tools, lvars, window_name):
         idaapi.PluginForm.__init__(self)
         self.config_main = config_main
         self.config_theme = config_theme
         self.tools = tools
+        self.lvars = lvars
         self.window_name = window_name
 
         self.interface = None
@@ -828,7 +863,8 @@ class Canvas(idaapi.PluginForm):
         self.parent = self.FormToPySideWidget(form)
         self.interface = EditorForm(self.config_main,
                                     self.config_theme,
-                                    self.tools)
+                                    self.tools,
+                                    self.lvars)
 
         self.interface.setupUi(self.parent)
         self.parent.setLayout(self.interface.gridLayout)
@@ -860,7 +896,7 @@ class Canvas(idaapi.PluginForm):
 
     def highlight_document(self, token_kinds):
         '''Switch on document highlighting.'''
-        include.syntax.Highlighter(self.interface.plainTextEdit.document(),
+        hrdev_plugin.include.syntax.Highlighter(self.interface.plainTextEdit.document(),
                                    self.config_theme,
                                    token_kinds)
         return

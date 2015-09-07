@@ -9,8 +9,8 @@
 from PySide import QtGui, QtCore
 import clang.cindex
 import idaapi
-import include.helper
-idaapi.require('include.helper')
+import hrdev_plugin.include.helper
+idaapi.require('hrdev_plugin.include.helper')
 
 
 class Parser(object):
@@ -23,7 +23,7 @@ class Parser(object):
         self.gui = self.plugin.gui
         self.tools = self.plugin.tools
 
-        self._token_kinds = include.helper.AttributeDict()
+        self._token_kinds = hrdev_plugin.include.helper.AttributeDict()
         self._token_kinds.punctiation = []
         self._token_kinds.kkeyword = []
         self._token_kinds.identifier = []
@@ -84,6 +84,7 @@ class Parser(object):
             self._replacer_literal = token.spelling
             # Replace integers with hex format
             if self.config_main.getboolean('editor', 'all_numbers_in_hex'):
+                idaapi.msg("{}".format(token.spelling))
                 if self.tools.is_number(token.spelling):
                     self._replacer_literal = self.tools.to_hex(token.spelling)
             if token.spelling not in self._token_kinds.literal:
