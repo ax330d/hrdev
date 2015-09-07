@@ -3,9 +3,18 @@ Hex-Rays Decompiler Enhanced View (HRDEV)
 
 ### What is this
 
-This is a simple IDA Pro Python plugin to make Hex-Rays Decompiler output bit
-more attractive. HRDEV plugin retrieves standard decompiler output, parses it
-with Python Clang bindings, does some magic, and puts back.
+This is an IDA Pro Python plugin to make Hex-Rays Decompiler output bit more
+attractive. HRDEV plugin retrieves standard decompiler output, parses it with
+Python Clang bindings, does some magic, and puts back.
+
+
+### Requirements & installation
+
+The only requirement is Clang Python binding. See https://pypi.python.org/pypi/clang.
+Clang binding is required to parse decompiler output and produce plugin output.
+
+First install Clang Python binding if you dont have it, then just paste plugin
+into "plugins/" IDA folder and plugin will be available on startup.
 
 
 ### How it works
@@ -17,20 +26,10 @@ complete files is currently not supported.
 As this plugin is written in Python, parsing huge file may be time consuming,
 so it probably makes no sense to support complete file parsing.
 
-### Requirements
-
-The only requirement is Clang Python binding. See https://pypi.python.org/pypi/clang.
-Clang binding is required to parse decompiler output and produce plugin output.
-
-
-### Installing
-
-First install Clang Python binding, then just paste plugin into "plugins/" IDA
-folder and it will be available on startup.
 
 ### Options
 
-HRDEV plugin has following key shortcuts:
+HRDEV plugin has other key shortcuts:
 
  * Ctr+S - will save current document
  * Ctr+F - will pop up find-replace modal dialog
