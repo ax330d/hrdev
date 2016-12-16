@@ -6,33 +6,40 @@
 '''
 Hex-Rays Decompiler Enhanced View plugin (HRDEV).
 
-This is a simple plugin to view somewhat enhanced decompiler output. For more
-information check out github: https://github.com/ax330d/hrdev/.
+This is a simple plugin to view somewhat enhanced decompiler output. For
+more information check out github: https://github.com/ax330d/hrdev/.
 '''
 
 import re
 import os
 import ConfigParser
 
-from PySide import QtCore, QtGui
+try:
+    from PySide import QtCore, QtGui
+except:
+    from PyQt5 import QtCore, QtWidgets
+
 import idaapi
 import idc
 import tempfile
 
-import hrdev_plugin.include.syntax
-import hrdev_plugin.include.gui
-import hrdev_plugin.include.helper
+try:
+    import hrdev_plugin.include.syntax
+    import hrdev_plugin.include.gui
+    import hrdev_plugin.include.helper
 
-idaapi.require('hrdev_plugin.include.syntax')
-idaapi.require('hrdev_plugin.include.gui')
-idaapi.require('hrdev_plugin.include.helper')
-
+    idaapi.require('hrdev_plugin.include.syntax')
+    idaapi.require('hrdev_plugin.include.gui')
+    idaapi.require('hrdev_plugin.include.helper')
+except Exception, e:
+    print e
 
 class Plugin(object):
     '''Implements the main plugin class, entry point.'''
 
     def __init__(self):
         super(Plugin, self).__init__()
+
         self.tools = hrdev_plugin.include.helper.Tools(self)
         self.config_main = ConfigParser.ConfigParser()
         self.config_theme = ConfigParser.ConfigParser()
@@ -119,13 +126,15 @@ class Plugin(object):
 
         function_name = idaapi.get_func_name(idaapi.get_screen_ea())
         demangled_name = self.tools.demangle_name(function_name)
-        file_name = '{}.cpp'.format(self.tools.to_file_name(demangled_name))
 
+        src = idaapi.decompile(idaapi.get_screen_ea())
+
+        file_name = '{}.cpp'.format(self.tools.to_file_name(demangled_name))
         cache_path = os.path.sep.join([tempfile.gettempdir(),
                                        'hrdev_cache',
                                        self._bin_name])
 
-        # Create require directories if they dont exist
+        # Create required directories if they dont exist
         tmp_dir_path = os.path.sep.join([tempfile.gettempdir(), 'hrdev_cache'])
         if not os.path.isdir(tmp_dir_path):
             os.mkdir(tmp_dir_path)
@@ -136,19 +145,18 @@ class Plugin(object):
         complete_path = os.path.sep.join([cache_path, file_name])
         idaapi.msg("HRDEV cache path: {}\n".format(complete_path))
 
-        src = idaapi.decompile(idaapi.get_screen_ea())
+        # Check if file is already in cache
+        if not os.path.isfile(complete_path) or \
+           self.config_main.getboolean('etc', 'disable_cache'):
+            self.tools.save_file(complete_path, str(src))
+
+        self.tools.set_file_path(complete_path)
 
         lvars = {}
         for v in src.lvars:
             _type = idaapi.print_tinfo('', 0, 0, idaapi.PRTYPE_1LINE, v.tif, '', '')
             lvars[str(v.name)] = "{} {} {}".\
                 format(_type, str(v.name), str(v.cmt))
-
-        # Check if file is already in cache
-        if not os.path.isfile(complete_path):
-            self.tools.save_file(complete_path, str(src))
-
-        self.tools.set_file_path(complete_path)
 
         max_title = self.config_main.getint('etc', 'max_title')
         self.gui = hrdev_plugin.include.gui.Canvas(self.config_main,
@@ -158,6 +166,6 @@ class Plugin(object):
                                                    demangled_name[:max_title])
         self.gui.Show('HRDEV')
 
-        self.parser = hrdev_plugin.include.syntax.Parser(self)
+        self.parser = hrdev_plugin.include.syntax.Parser(self, lvars)
         self.parser.run(complete_path)
         return
