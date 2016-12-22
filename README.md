@@ -16,6 +16,14 @@ Clang binding is required to parse decompiler output and produce plugin output.
 First install Clang Python binding if you don't have it, then just paste plugin
 into "plugins/" IDA folder and plugin will be available on startup.
 
+Note: please make sure that you have matching LLVM Python bindings and
+LLVM version installed (http://releases.llvm.org/download.html).
+Otherwise you may get errors due to incompatibility. This is not an
+HRDEV issue.  
+
+Note: only IDA version higher than 6.6 is supported. If I get requests
+to support earlier versions I will port HRDEV. See http://www.hexblog.com/?p=886.
+
 
 ### How it works
 
